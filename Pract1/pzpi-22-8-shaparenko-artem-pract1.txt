@@ -1,0 +1,240 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+Кафедра ПІ
+
+
+
+
+Звіт з практичної роботи №1
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+ 
+Виконав:
+ст. гр. ПЗПІ-22-8
+Шапаренко Артем Васильович
+Перевірив:
+ст. викладач каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+
+
+Харків 2024  
+Тема: основні рекомендації написання коду для обраної мови програмування.
+Мета: дослідити рекомендації щодо написання коду для обраної мови програмування.
+Хід роботи:
+Посилання на відеоматеріал: https://youtu.be/4gGnpCtYUpY 
+1.1	Оформлення фігурних дужок
+Відкриваюча фігурна дужка повинна знаходиться в тому ж рядку, що й оператор.
+Гарний приклад:
+1 @PutMapping("/{goodId}/price")
+2 public ResponseEntity<?> updateGoodPrice(
+3         @PathVariable Integer goodId,
+4         @RequestParam Double newPrice) {
+5     try {
+6         goodService.updateGoodPrice(goodId, newPrice);
+7         return ResponseEntity.ok(Map.of("message", "Price updated successfully"));
+8     } catch (IllegalArgumentException e) {
+9         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error",
+10 e.getMessage()));
+11     } catch (Exception e) {
+12         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+13                 Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+14     }
+15 }
+
+Поганий приклад:
+1 @PutMapping("/{goodId}/price")
+2 public ResponseEntity<?> updateGoodPrice(
+3         @PathVariable Integer goodId,
+4         @RequestParam Double newPrice) 
+5 {
+6     try 
+7     {
+8         goodService.updateGoodPrice(goodId, newPrice);
+9         return ResponseEntity.ok(Map.of("message", "Price updated successfully"));
+10    } 
+11    catch (IllegalArgumentException e) 
+12    {
+13        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error",
+14 e.getMessage()));
+15    } 
+16    catch (Exception e) 
+17    {
+18        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+19            Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+20    }
+21 }
+1.2	Оформлення відступів
+Слід використовувати 4 пробіли для відступів.
+Гарний приклад:
+1 @Transactional
+2 public void updateGoodPrice(int goodId, double newPrice) {
+3     try {
+4         goodRepository.updateGoodPrice(goodId, newPrice);
+5     } catch (Exception e) {
+6         Throwable cause = e.getCause();
+7         while (cause != null) {
+8             if (cause.getMessage() != null && 
+9 cause.getMessage().contains("Product with ID")) {
+10                String cleanMessage = 11cause.getMessage().split("Where:")[0].trim();
+12                throw new IllegalArgumentException(cleanMessage);
+13            }
+14            cause = cause.getCause();
+15        }
+16        throw new RuntimeException("Unexpected error occurred");
+17    }
+18}
+
+Поганий приклад:
+1  @Transactional
+2  public void updateGoodPrice(int goodId, double newPrice) {
+3  try {
+4  goodRepository.updateGoodPrice(goodId, newPrice);
+5  } catch (Exception e) {
+6  Throwable cause = e.getCause();
+7  while (cause != null) {
+8  if (cause.getMessage() != null && 
+9  cause.getMessage().contains("Product with ID")) {
+10 String cleanMessage = 11cause.getMessage().split("Where:")[0].trim();
+12 throw new IllegalArgumentException(cleanMessage);
+13 }
+14 cause = cause.getCause();
+15 }
+16 throw new RuntimeException("Unexpected error occurred");
+17 }
+18 }
+
+1.3	Довжина рядка
+Уникайте рядків, довжина яких перевищує 80 символів.
+ 
+Гарний приклад:
+1  public Good(String name,
+2              Double price,
+3              Integer quantity,
+4              String producer,
+5              Long dept_id,
+6              String description) {
+7      this.name = name;
+8      this.price = price;
+9      this.quantity = quantity;
+10     this.producer = producer;
+11     this.dept_id = dept_id;
+12     this.description = description;
+13 }
+
+Поганий приклад:
+1  public Good(String name, Double price, Integer quantity, String producer, 
+2  Long dept_id, String description) {
+7      this.name = name;
+8      this.price = price;
+9      this.quantity = quantity;
+10     this.producer = producer;
+11     this.dept_id = dept_id;
+12     this.description = description;
+13 }
+
+1.4	Оголошення констант
+Константи пишуться з використанням великих літер та розділюються підкресленням.
+Гарний приклад:
+1 public static final String DEFAULT_USER_ROLE = "GUEST";
+
+Поганий приклад:
+1 public static final String defaultUserRole = "GUEST";
+
+1.5	Порожні рядки
+Використовуйте порожні рядки для логічного поділу коду на блоки.
+ 
+Гарний приклад:
+1  public class GoodController {
+2      private final GoodService goodService;
+3  
+4      @Autowired
+5      public GoodController(GoodService goodService){
+6          this.goodService = goodService;
+7      }
+8  
+9      @PostMapping("/update-description")
+10     public void updateDescription(@RequestParam("departmentId") Integer 
+11 departmentId) {
+12         goodService.updateDescription(departmentId);
+13     }
+
+Поганий приклад:
+1  public class GoodController {
+2      private final GoodService goodService;
+3      @Autowired
+4      public GoodController(GoodService goodService){
+5          this.goodService = goodService;
+6      }
+7      @PostMapping("/update-description")
+8      public void updateDescription(@RequestParam("departmentId") Integer 
+9  departmentId) {
+10         goodService.updateDescription(departmentId);
+11     }
+
+1.6	Оператори
+Ставте пробіли навколо операторів для покращення читабельності.
+Гарний приклад:
+1 @Override
+2 public String toString() {
+3     return "Department{dept_id=" + dept_id + ", name='" + name + "', 
+4 info='" + info + "'}";
+5 }
+
+Поганий приклад:
+1 @Override
+2 public String toString() {
+3     return "Department{dept_id="+dept_id+", name='"+name+"', 
+4 info='"+info+"'}";
+5 }
+ 
+Висновок.
+У роботі було досліджено основні рекомендації написання коду для обраної мови програмування. Розглянуто такі аспекти: правильне оформлення фігурних дужок, відступів, обмеження довжини рядків, оголошення констант, використання порожніх рядків та форматування операторів. Проаналізовані приклади продемонстрували, як чітке дотримання стандартів кодування покращує читабельність, зрозумілість і підтримуваність коду. Це підкреслює важливість стандартизації коду для забезпечення високої якості програмного забезпечення.
+
+Список використаних джерел:
+1.	Oracle’s Java Code Convention / URL : https://www.oracle.com/technetwork/java/codeconventions-150003.pdf
+2.	Robert C. Martin, Clean Code: A Handbook of Agile Software Craftsmanship.
+ 
+Додаток А
+ 
+Рисунок А.1 – Титульний слайд презентації
+
+ 
+Рисунок А.2 – Ознайомлення з Java
+ 
+ 
+Рисунок А.3 – Правила оформлення фігурних дужок
+
+ 
+Рисунок А.4 – Правило оформлення відступів
+ 
+ 
+Рисунок А.5 – Обмеження довжини рядка
+
+ 
+Рисунок А.6 – Оголошення констант 
+ 
+ 
+Рисунок А.7 – Правило порожніх рядків
+
+ 
+Рисунок А.8 – Оформлення операторів
+ 
+ 
+Рисунок А.9 – Висновки
+
+ 
+Рисунок А.10 – Використані джерела
+ 
+ 
+Рисунок А.11 – Дякую за увагу
