@@ -1,0 +1,289 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+
+Кафедра ПІ
+
+
+
+Звіт з лабораторної роботи №2
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+ 
+Виконав:
+ст. гр. ПЗПІ-22-8
+Шапаренко Артем Васильович
+ 
+Перевірив:
+ст. викладача каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+
+
+Харків 2024 
+ 
+Тема: розробка бази даних для серверної частини програмної системи та прикладного програмного інтерфейсу (API).
+
+Мета: розробити базу даних для серверної частини програмної системи та прикладного програмного інтерфейсу.
+
+Хід роботи:
+
+1.	Опис інженерних рішень
+Для розробки серверної частини програмної системи було обрано фреймворк Spring Boot, який базується на мові Java. Фреймворк надає велику кількість інструментів для розробки серверу, простий у використанні та має здатність додавати модулі.
+Серед модулів Spring Boot були обрані Spring Web, Spring Data JPA та PostgreSQL Driver. Spring Web використовується для створення RESTful API, що забезпечує взаємодію між клієнтом і сервером через HTTP-запити (GET, POST, PUT, DELETE). Spring Data JPA дозволяє працювати з базою даних через ORM (Object-Relational Mapping), автоматизуючи виконання CRUD-операцій (створення, читання, оновлення, видалення) і спрощуючи взаємодію з даними за допомогою інтерфейсів репозиторіїв. PostgreSQL Driver забезпечує зв’язок між застосунком і системою управління базою даних PostgreSQL, дозволяючи Spring Boot безпосередньо працювати з цією базою через стандартний SQL або JPQL (Java Persistence Query Language).
+Структура проекту базується на підході MVC (Model-View-Controller), завдяки чому забезпечується поділ логіки, представлення та контролю. Це спрощує підтримку та розвиток системи, дозволяючи незалежно змінювати логіку, дані та способи їх подання.
+У ролі системи управління базою даних було обрано PostgreSQL, оскільки вона є надійною, продуктивною та простою у використанні. PostgreSQL добре працює з великими обсягами даних і підтримує стандартний SQL, що спрощує розробку. Завдяки інтеграції зі Spring Data JPA можна автоматизувати більшість операцій з базою даних і зосередитися на бізнес-логіці програми.
+
+2.	Специфікація API для взаємодії серверної частини з клієнтами
+Для реалізації взаємодії між клієнтською і серверною частинами було обрано REST API, оскільки цей підхід забезпечує простоту впровадження та підтримки. REST базується на стандартних HTTP-методах (GET, POST, PUT, DELETE), що полегшує розробку і робить API зрозумілим як для розробників, так і для клієнтів.
+REST API є універсальним рішенням, оскільки підтримується більшістю мов програмування та фреймворків. Така широка сумісність дозволяє легко інтегрувати серверну частину з будь-яким клієнтським застосунком. Завдяки легкій масштабованості REST API, систему можна розширювати відповідно до зростання навантаження без значних змін у коді.
+Дані передаються у стандартних форматах, таких як JSON, що робить їх зручними для обробки як клієнтською, так і серверною сторонами. REST API також широко використовується у веб-розробці, що дає доступ до великої кількості бібліотек, інструментів і прикладів для роботи з ним.
+Система реалізована за допомогою архітектурного шаблону MVC (Model-View-Controller), що забезпечує чіткий поділ між обробкою даних, бізнес-логікою та обробкою запитів. Model відповідає за взаємодію з базою даних через ORM. View у контексті REST API представлений JSON-відповідями, які клієнтська сторона перетворює у зрозумілий для користувача інтерфейс. Controller обробляє вхідні HTTP-запити, викликає необхідні методи Model і повертає клієнту відповідь.
+
+3.1	Логіка взаємодії серверної частини з БД.
+За зберігання у собі даних із бази даних відповідають класи (моделі), які містять анотацію @Entity. Цей підхід базується на прийомі ORM, коли певний клас відповідає певній таблиці у базі даних. Приклад коду однієї із моделей наведено у додатку А.
+За отримання даних із бази даних відповідають інтерфейси, які містять анотацію @Repository. Завдяки ним забезпечуються операції з отриманням, редагуванням, створенням та видаленням записів у базі даних. Кожен такий інтерфейс відповідає певній моделі. Код одного із репозиторіїв має наступний вигляд:
+
+1 package ua.service.SeStans.user;
+2
+3 import org.springframework.data.jpa.repository.JpaRepository;
+4 import org.springframework.stereotype.Repository;
+5
+6 @Repository
+7 public interface UserRepository extends JpaRepository<User, Integer> {
+8 }
+
+За обробку вхідних даних та бізнес логіку відповідають класи з анотацією @Service. Також завдяки ним забезпечується виконання специфічних операцій, які виходять за рамки базових CRUD-операцій. Приклад коду одного із сервісів наведено у додатку Б.
+
+3.2	Логіка взаємодії серверної частини з клієнтами
+За отримання даних від користувачів системи відповідають класи із анотацією @RestController. Використовуючи методи із анотаціями @PostMapping (створити), @GetMapping (отримати), @PutMapping (редагувати) та @DeleteMapping (видалити) реалізуються CRUD-операції. У результаті їх роботи користувач отримує дані у форматі JSON. А використовуючи анотацію @GetParameter сервер вимагає від користувача дані, які в подальшому будуть передані Сервіс-класу і в подальшому оброблені за бізнес-логікою. Приклад коду одного з контролерів наведено у додатку В.
+
+4.	Графічні ілюстрації
+Задля забезпечення детального розуміння роботи системи були створені графічні ілюстрації, котрі відображають структуру бази даних (див. рис. 4.1 та 4.2) та взаємодію користувачів із системою (див. рис. Г.1 та Г.2).
+
+ 
+Рисунок 4.1 – ER діаграма
+
+ 
+Рисунок 4.2 – Діаграма структури бази даних
+
+5.	Висновок
+У результаті роботи було створено базу даних для серверної частини програмної системи та прикладного програмного інтерфейсу.
+Переглянути відеозапис можливо за посиланням: https://youtu.be/McwG0EiwBVk  
+ДОДАТОК А
+Програмний код моделі «Користувачі»
+1  package ua.service.SeStans.user;
+2  
+3  import jakarta.persistence.*;
+4
+5  @Entity
+6  @Table(name="Users")
+7  public class User {
+8
+9      @Id
+10     @GeneratedValue(strategy = GenerationType.IDENTITY)
+11     private Integer user_id;
+12     private String first_name;
+13     private String last_name;
+14     private String phone;
+15     private String email;
+16     private String password;
+17
+18     public User() {
+19     }
+20
+21     public User(Integer user_id, String first_name, String last_name, String 
+22 phone, String email, String password) {
+23         this.user_id = user_id;
+24         this.first_name = first_name;
+25         this.last_name = last_name;
+26         this.phone = phone;
+27         this.email = email;
+28         this.password = password;
+29     }
+30
+31     public User(String first_name, String last_name, String phone, String 
+32 email, String password) {
+33         this.first_name = first_name;
+34         this.last_name = last_name;
+35         this.phone = phone;
+36         this.email = email;
+37         this.password = password;
+38     }
+39 
+40     public Integer getUser_id() {
+41         return user_id;
+42     }
+43
+44     public void setUser_id(Integer user_id) {
+45         this.user_id = user_id;
+46     }
+47
+48     public String getFirst_name() {
+49         return first_name;
+50     }
+51
+52     public void setFirst_name(String first_name) {
+53         this.first_name = first_name;
+54     }
+55
+56     public String getLast_name() {
+57         return last_name;
+58     }
+59
+60     public void setLast_name(String last_name) {
+61         this.last_name = last_name;
+62     }
+63
+64     public String getPhone() {
+65         return phone;
+66     }
+67
+68     public void setPhone(String phone) {
+69         this.phone = phone;
+70     }
+71
+72     public String getEmail() {
+73         return email;
+74     }
+75
+76     public void setEmail(String email) {
+77         this.email = email;
+78     }
+79
+80     public void setPassword(String password) {
+81         this.password = password;
+82     }
+83
+84     @Override
+85     public String toString() {
+86         return "User{" +
+87                 "user_id=" + user_id +
+88                 ", first_name='" + first_name + '\'' +
+89                 ", last_name='" + last_name + '\'' +
+90                 ", phone='" + phone + '\'' +
+91                 ", email='" + email + '\'' +
+92                 '}';
+93     }
+94 }
+ 
+ДОДАТОК Б
+Програмний код сервісу «Користувачі»
+1  package ua.service.SeStans.user;
+2
+3  import org.springframework.beans.factory.annotation.Autowired;
+4  import org.springframework.stereotype.Service;
+5
+6  import java.util.List;
+7
+8  @Service
+9  public class UserService {
+10     private final UserRepository userRepository;
+11
+12     @Autowired
+13     public UserService(UserRepository userRepository) {
+14         this.userRepository = userRepository;
+15     }
+16
+17     public List<User> getUsers(){
+18         return userRepository.findAll();
+19     }
+20
+21     public User createUser(String firstName, String lastName, String phone, 
+22 String email, String password) {
+23         User user = new User(firstName, lastName, phone, email, password);
+24
+25         return userRepository.save(user);
+26     }
+27
+28     public User updateUser(Integer userId, String firstName, String lastName, 
+29 String phone, String email, String password){
+30         User existingUser = userRepository.findById(userId).orElseThrow(() ->
+31                 new IllegalArgumentException("User not found with ID:" + 
+32 userId));
+33
+34         existingUser.setFirst_name(firstName);
+35         existingUser.setLast_name(lastName);
+36         existingUser.setPhone(phone);
+37         existingUser.setEmail(email);
+38         existingUser.setPassword(password);
+39
+40         return userRepository.save(existingUser);
+41     }
+42
+43     public void deleteUser(Integer userId){
+44         if (!userRepository.existsById(userId)){
+45             throw new IllegalArgumentException("User not found with ID:" + 
+46 userId);
+47         }
+48         userRepository.deleteById(userId);
+49     }
+50 }
+ 
+ДОДАТОК В
+Програмний код контролера «Користувачі»
+1  package ua.service.SeStans.user;
+2
+3  import org.springframework.beans.factory.annotation.Autowired;
+4  import org.springframework.web.bind.annotation.*;
+5
+6  import java.util.List;
+7
+8  @RestController
+9  @RequestMapping(path = "api/v1/user")
+10 public class UserController {
+11     private final UserService userService;
+12 
+13     @Autowired
+14     public UserController(UserService userService) {
+15         this.userService = userService;
+16     }
+17
+18     @GetMapping
+19     public List<User> getUsers(){
+20         return userService.getUsers();
+21     }
+22
+23     @PostMapping
+24     public User createUser(@RequestParam String first_name,
+25                            @RequestParam String last_name,
+26                            @RequestParam String phone,
+27                            @RequestParam String email,
+28                            @RequestParam String password){
+29         return userService.createUser(first_name, last_name, phone, email, 
+30 password);
+31     }
+32
+33     @PutMapping("/{userId}")
+34     public User updateUser(@PathVariable Integer userId,
+35                            @RequestParam String first_name,
+36                            @RequestParam String last_name,
+37                            @RequestParam String phone,
+38                            @RequestParam String email,
+39                            @RequestParam String password){
+40         return userService.updateUser(userId, first_name, last_name, phone, 
+41 email, password);
+42     }
+43
+44     @DeleteMapping("/{userId}")
+45     public void deleteUser(@PathVariable Integer userId){
+46         userService.deleteUser(userId);
+47     }
+48 }
+ 
+ДОДАТОК Г
+UML діаграми: діаграма прецедентів
+ 
+Рисунок Г.1 – UML діаграма прецедентів
+
+ 
+Рисунок Г.2 – Продовження UML діаграми прецедентів
