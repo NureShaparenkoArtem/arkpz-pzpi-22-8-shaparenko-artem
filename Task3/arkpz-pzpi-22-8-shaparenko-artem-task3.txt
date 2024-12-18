@@ -1,0 +1,166 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+
+Кафедра ПІ
+
+
+
+Звіт з лабораторної роботи №3
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+ 
+Виконав:
+ст. гр. ПЗПІ-22-8
+Шапаренко Артем Васильович
+ 
+Перевірив:
+ст. викл. каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+
+
+Харків 2024 
+ 
+Тема: розробка бізнес-логіки та функцій адміністрування серверної частини програмної системи.
+
+Мета: розробити бізнес-логіку та функції адміністрування серверної частини програмної системи.
+
+Хід роботи:
+
+1.	Опис інженерних рішень
+1.1	Бізнес логіка
+Програмна система для станцій обслуговування транспортних засобів спрямована на забезпечення ефективного бронювання та управління послугами для користувачів. Основними елементами бізнес-логіки є своєчасне відкриття та закриття станцій згідно з їх розкладом, а також розрахунок вартості резервацій.  
+Бізнес-логіка системи включає автоматизацію процесів управління часом роботи станцій та точні розрахунки вартості резервацій. Розрахунок резервацій базується на добутку часу бронювання на погодинну ціну послуги з додаванням вартості механіка, якщо він залучений. Це забезпечує користувачам прозорий розрахунок вартості послуг та своєчасну доступність станцій для обслуговування.
+
+1.2	Адміністрування серверної частини
+Для адміністратора були розроблені такі функції адміністрування, як редагування та видалення користувачів, редагування та видалення сервісних станцій, а також видалення резервацій. Ці можливості забезпечують гнучке управління системою та підтримку її актуального стану. Для більш детального розуміння було додатково створені UML-діаграми для візуалізації відповідних процесів адміністрування та бізнес логіки (див. рис. 1.1, 1.2).
+
+ 
+Рисунок 1.1 – UML діаграма діяльності
+ 
+Рисунок 1.2 – UML діаграма взаємодії
+2.	Фрагменти програмного коду
+2.1	Бізнес логіка
+Одна з бізнес-логік знаходиться у створенні та редагування резервування. Вона стосується розрахунку ціні за резервацію і розраховується добутком різниці у часі початку та закінчення резервації на погодинну ціну станції (рядки 20-22).
+
+1  public Reservation createReservation(LocalDateTime reservationTime,
+2                                       LocalDateTime reservationEndTime,
+3                                       String status,
+4                                       Boolean mechanicNeed,
+5                                       Integer stationId,
+6                                       Integer vehicleId,
+7                                       Integer mechanicId) {
+8      Station station = stationRepository.findById(stationId)
+9              .orElseThrow(() -> new IllegalArgumentException("Station not found 10 with ID: " + stationId));
+11 
+12     Vehicle vehicle = vehicleRepository.findById(vehicleId)
+13             .orElseThrow(() -> new IllegalArgumentException("Vehicle not found 14 with ID: " + vehicleId));
+15
+16     Mechanic mechanic = mechanicRepository.findById(mechanicId)
+17             .orElseThrow(() -> new IllegalArgumentException("Mechanic not found 18 with ID: " + mechanicId));
+19
+20     Float reservationPrice = 
+21 (float)Math.ceil(reservationTime.until(reservationEndTime, ChronoUnit.HOURS)) * 22 station.getHourly_price();
+23
+24     Reservation reservation = new Reservation(reservationTime, 
+25 reservationEndTime,
+26             status, mechanicNeed, reservationPrice, station, vehicle, 
+27 mechanicNeed ? mechanic : null);
+28    
+29     return reservationRepository.save(reservation);
+30 }
+
+Друга бізнес-логіка стосується відкриттю та закриттю станцій за часом. Вона реалізована за допомогою анотації @Scheduled, за допомогою якої можливо встановити час початку, затримку та проміжок часу, на якому буде спрацьовувати функція. Одна з таких анотацій встановлена у відкритті станцій:
+
+1. @Scheduled(cron = "0 0/15 7-12 * * ?")
+
+Вона відповідає за запуск функції кожні 15 хвилин, починаючи з 7-ої годин ранку по 12-ту годину дня. Закриття ж перевіряються аналогічно, але починаючи з 3-ої години дня по 11-ту годину ночі.
+
+2.2	Адміністрування
+Для адміністратора доступні наступні функції: видалення та редагування користувача, видалення та редагування станції та видалення резервації за їх ідентифікаторами. Коди для редагування та видалення користувачів та станцій наведені у додатках А та Б, код для видалення резервації має наступний вигляд:
+
+1 public void deleteReservation(Integer reservationId) {
+2     if (!reservationRepository.existsById(reservationId)){
+3         throw new IllegalArgumentException("Reservation not found with ID:" + 
+4 reservationId);
+5     }
+6     reservationRepository.deleteById(reservationId);
+7 }
+
+3.	Висновок
+У результаті роботи було створено розроблену бізнес-логіку та функції адміністрування серверної частини програмної системи для станцій обслуговування транспортних засобів.
+Переглянути відеозапис можливо за посиланням: https://youtu.be/McwG0EiwBVk  
+ДОДАТОК А
+Програмний код сервісу «Користувачі» для адміністраторів
+1  public User updateUser(Integer userId, String firstName, String lastName, 
+2  String phone, String email, String password){
+3      User existingUser = userRepository.findById(userId).orElseThrow(() ->
+4              new IllegalArgumentException("User not found with ID:" + userId));
+5
+6      existingUser.setFirst_name(firstName);
+7      existingUser.setLast_name(lastName);
+8      existingUser.setPhone(phone);
+9      existingUser.setEmail(email);
+10      existingUser.setPassword(password);
+11
+12     return userRepository.save(existingUser);
+13 }
+14 
+15 public void deleteUser(Integer userId){
+16     if (!userRepository.existsById(userId)){
+17         throw new IllegalArgumentException("User not found with ID:" + userId);
+18     }
+19     userRepository.deleteById(userId);
+20 }
+  
+ДОДАТОК Б
+Програмний код сервісу «Станції» для адміністраторів
+1  public Station updateStation(Integer stationId,
+2                               String stationName,
+3                               String stationType,
+4                               String location,
+5                               LocalTime openingTime,
+6                               LocalTime closingTime,
+7                               Integer ownerId,
+8                               Float hourly_price,
+9                               String availableTools){
+10     Station existingStation = 
+11 stationRepository.findById(stationId).orElseThrow(() ->
+12             new IllegalArgumentException("Station not found with ID: " + 
+13 stationId));
+14
+15     Owner owner = ownerRepository.findById(ownerId).orElseThrow(() ->
+16             new IllegalArgumentException("Owner not found with ID: " + 
+17 ownerId));
+18
+19     existingStation.setStation_name(stationName);
+20     existingStation.setStation_type(stationType);
+21     existingStation.setLocation(location);
+22     existingStation.setOpeningTime(openingTime);
+23     existingStation.setClosingTime(closingTime);
+24     existingStation.setOwner(owner);
+25     existingStation.setHourly_price(hourly_price);
+26     existingStation.setAvailable_tools(availableTools);
+27
+28     return stationRepository.save(existingStation);
+29 }
+30
+31 public void deleteStation(Integer stationId){
+32     if (!stationRepository.existsById(stationId)) {
+33         throw new IllegalArgumentException("Station not found with ID: " + 
+34 stationId);
+35     }
+36
+37     stationRepository.deleteById(stationId);
+38 }
+ 
