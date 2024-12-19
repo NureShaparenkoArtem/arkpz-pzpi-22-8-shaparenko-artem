@@ -1,0 +1,205 @@
+Міністерство освіти і науки України
+Харківський національний університет радіоелектроніки
+
+
+
+
+Кафедра ПІ
+
+
+
+Звіт з лабораторної роботи №4
+з дисципліни «Аналіз та рефакторинг коду»
+
+
+
+
+ 
+Виконав:
+ст. гр. ПЗПІ-22-8
+Шапаренко Артем Васильович
+ 
+Перевірив:
+ст. викл. каф. ПІ
+Сокорчук Ігор Петрович 
+
+
+
+
+
+
+
+Харків 2024 
+ 
+Тема: розробка IoT клієнта (бізнес-логіки та функцій налаштування).
+
+Мета: розробити програмне забезпечення для IoT або SmartDevice пристрою, створеного на базі будь-якої поширеної платформі, придатної для реалізації вбудованих систем.
+
+Хід роботи:
+
+1.	Опис інженерних рішень
+Для розробки IoT пристрою було використано платформу Wokwi, яка дозволяє створювати віртуальні пристрої, інтегрувати різні модулі та програмувати їх за допомогою C++.
+Основою пристрою є мікроконтролер ESP32, який обрано завдяки його універсальності. Для вимірювання дистанції було використано ультразвуковий сенсор. Цей сенсор дозволяє точно визначати відстань до об’єктів, що важливо для контролю стану станції. Логіка роботи сенсора реалізована в коді, де він активується через TRIG-пін, а отримані дані зчитуються через ECHO-пін. Для обробки даних використовується алгоритм, що розраховує відстань на основі часу проходження ультразвукової хвилі.
+Обробка даних від сенсора реалізована за допомогою мови C++ із використанням бібліотеки PubSubClient для взаємодії з MQTT-брокером. MQTT обрано через його легкість, низькі вимоги до пропускної здатності мережі та зручність для IoT пристроїв. Це дозволяє пристрою оперативно передавати дані про статус станції на сервер і реагувати на зміни.
+Інженерне рішення також передбачає використання двох світлодіодів для індикації стану станції (зайнята/вільна). Ці світлодіоди дозволяють візуалізувати дані, що підвищує зручність використання пристрою в реальному середовищі.
+Завдяки комбінації апаратної частини (ESP32, сенсор, світлодіоди) та програмної (C++, бібліотеки Wi-Fi і MQTT) вдалося створити компактний, надійний і функціональний IoT пристрій. Схема пристрою зображена на рисунку 1.1, а перевірити працездатність пристрою можливо за посиланням: https://wokwi.com/projects/417428136409039873.
+
+ 
+Рисунок 1.1 – Схема IoT пристрою
+
+2.	Фрагменти програмного коду
+2.1	Бізнес-логіка IoT клієнта
+Для реалізації основної бізнес-логіки IoT клієнта було розроблено функцію для вимірювання відстані до об'єктів за допомогою ультразвукового сенсора. Ця функція використовує імпульсний сигнал для обчислення часу, який імпульс витрачає на подорож до об’єкта і назад. Потім цей час конвертується у відстань у сантиметрах. Функція є ключовим елементом логіки пристрою, адже саме вона визначає стан паркувальної станції: зайнята вона чи вільна:
+
+1  float measureDistance() {
+2    digitalWrite(TRIG_PIN, LOW);
+3    delayMicroseconds(2);
+4    digitalWrite(TRIG_PIN, HIGH);
+5    delayMicroseconds(10);
+6    digitalWrite(TRIG_PIN, LOW);
+7 
+8    long duration = pulseIn(ECHO_PIN, HIGH);
+9    return duration * 0.034 / 2;
+10 }
+
+2.2	Налаштування IoT клієнта
+Для забезпечення бездротової передачі даних між IoT пристроєм і сервером потрібне підключення до Wi-Fi. Це дозволяє пристрою взаємодіяти з мережею та MQTT-брокером. Функція підключення до Wi-Fi використовує вбудовані бібліотеки ESP32 для автоматизації процесу, включно із перевіркою статусу з’єднання:
+
+1  void connectToWiFi() {
+2    Serial.print("Connecting to WiFi...");
+3    WiFi.begin(ssid, password);
+4
+5    while (WiFi.status() != WL_CONNECTED) {
+6      delay(500);
+7      Serial.print(".");
+8    }
+9 
+10   Serial.println("Connected to WiFi!");
+11 }
+
+MQTT використовується як протокол передачі даних, що забезпечує ефективний обмін інформацією між пристроєм та сервером. Функція підключення до MQTT перевіряє активність з’єднання і в разі потреби автоматично його відновлює, гарантуючи стабільну роботу пристрою:
+void reconnect() {
+  while (!client.connected()) {
+    if (client.connect("ESP32Client")) {
+    } else {
+      delay(5000);
+    }
+  }
+}
+
+3.	Графічні ілюстрації
+Задля забезпечення детального розуміння роботи IoT пристрою були створені графічні ілюстрації, котрі відображають взаємодію власників станцій з IoT-пристроєм із системою (див. рис. 3.1) та взаємодію IoT-пристрою з компонентами системи (див. рис. 3.2).
+
+ 
+Рисунок 3.1 – UML діаграма прецедентів для IoT клієнта
+ 
+Рисунок 3.2 – UML діаграма діяльності для IoT клієнта
+
+4.	Висновок
+У результаті роботи було створене програмне забезпечення для IoT пристрою, придатної для реалізації вбудованих систем. За її допомогою можливо відстежувати за поточним станом станції.
+Переглянути відеозапис можливо за посиланням: https://youtu.be/E_5AcEbMDnE  
+ДОДАТОК А
+Програмний код IoT пристрою
+1   #include <WiFi.h>
+2   #include <PubSubClient.h>
+3
+4   const char* ssid = "Wokwi-GUEST";
+5   const char* password = "";
+6 
+7   const char* mqtt_server = "broker.emqx.io";
+8   const int mqtt_port = 1883;
+9   const char* mqtt_topic = "station/status";
+10
+11 WiFiClient espClient;
+12 PubSubClient client(espClient);
+13
+14 bool stationOccupied = false;
+15
+16 #define TRIG_PIN 27
+17 #define ECHO_PIN 26
+18 const int RED_LED = 33;
+19 const int GREEN_LED = 25;
+20
+21 const float DETECTION_THRESHOLD = 35.0;
+22
+23 void setup() {
+24   Serial.begin(115200);
+25   pinMode(TRIG_PIN, OUTPUT);
+26   pinMode(ECHO_PIN, INPUT);
+27   pinMode(RED_LED, OUTPUT);
+28   pinMode(GREEN_LED, OUTPUT);
+29
+30   digitalWrite(RED_LED, LOW);
+31   digitalWrite(GREEN_LED, HIGH);
+32 
+33   connectToWiFi();
+34 
+35   client.setServer(mqtt_server, mqtt_port);
+36 }
+37
+38 void loop() {
+39   if (!client.connected()) {
+40     reconnect();
+41   }
+42   client.loop();
+43 
+44   float distance = measureDistance();
+45   if (distance < DETECTION_THRESHOLD && !stationOccupied) {
+46     stationOccupied = true;
+47     sendStationStatus(false);
+48     digitalWrite(RED_LED, HIGH);
+49     digitalWrite(GREEN_LED, LOW);
+50   } else if (distance >= DETECTION_THRESHOLD && stationOccupied) {
+51     stationOccupied = false;
+52     sendStationStatus(true);
+53     digitalWrite(RED_LED, LOW);
+54     digitalWrite(GREEN_LED, HIGH);
+55   }
+56 
+57   delay(1000);
+58 }
+59 
+60 float measureDistance() {
+61   digitalWrite(TRIG_PIN, LOW);
+62   delayMicroseconds(2);
+63   digitalWrite(TRIG_PIN, HIGH);
+64   delayMicroseconds(10);
+65   digitalWrite(TRIG_PIN, LOW);
+66 
+67   long duration = pulseIn(ECHO_PIN, HIGH);
+68   return duration * 0.034 / 2;
+69 }
+70
+71 void connectToWiFi() {
+72   Serial.print("Connecting to WiFi...");
+73   WiFi.begin(ssid, password);
+74
+75   while (WiFi.status() != WL_CONNECTED) {
+76     delay(500);
+77     Serial.print(".");
+78   }
+79 
+80   Serial.println("Connected to WiFi!");
+81 }
+82
+83 Void reconnect() {
+84   while (!client.connected()) {
+85     if (client.connect("ESP32Client")) {
+86     } else {
+87       delay(5000);
+88     }
+89   }
+90 }
+91 
+92 void sendStationStatus(bool isFree) {
+93   String jsonPayload = "{"
+94                        "\"stationId\": 5,"
+95                        "\"isFree\": " + String(isFree ? "true" : "false") +
+96                        "}";
+97 
+98   if (client.publish(mqtt_topic, jsonPayload.c_str())) {
+99     Serial.println("Status sent: " + jsonPayload);
+100  } else {
+101     Serial.println("Failed to send status");
+102  }
+103 }

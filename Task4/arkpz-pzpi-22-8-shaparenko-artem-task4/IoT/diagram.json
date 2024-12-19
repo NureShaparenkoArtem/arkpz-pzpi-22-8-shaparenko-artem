@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "author": "Артем Шапаренко",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": -4.76, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 25.2,
+      "left": -207.4,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led2",
+      "top": 25.2,
+      "left": -178.6,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 51.95,
+      "left": -86.4,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 71.15,
+      "left": -96,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic1",
+      "top": 87.9,
+      "left": -205.7,
+      "attrs": { "distance": "2" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "ultrasonic1:VCC", "esp:5V", "red", [ "v19.2", "h115.05" ] ],
+    [ "ultrasonic1:GND", "esp:GND.3", "black", [ "v38.4", "h210", "v-134.4" ] ],
+    [ "ultrasonic1:TRIG", "esp:27", "green", [ "v9.6", "h105.2", "v-67.2" ] ],
+    [ "ultrasonic1:ECHO", "esp:26", "green", [ "h85.6", "v-67.2" ] ],
+    [ "r2:2", "esp:25", "green", [ "h8.4", "v28.8" ] ],
+    [ "r1:2", "esp:33", "green", [ "h8.4", "v48" ] ],
+    [ "led1:A", "r2:1", "green", [ "v9.6", "h96" ] ],
+    [ "led2:A", "r1:1", "green", [ "v0", "h9.6", "v-28.8" ] ],
+    [
+      "led2:C",
+      "esp:GND.3",
+      "green",
+      [ "h-9.2", "v-38.4", "h163.2", "v-38.4", "h115.2", "v96", "h-9.6" ]
+    ],
+    [
+      "led1:C",
+      "esp:GND.3",
+      "green",
+      [ "h-9.2", "v-48", "h182.4", "v-38.4", "h134.4", "v105.6" ]
+    ]
+  ],
+  "dependencies": {}
+}
