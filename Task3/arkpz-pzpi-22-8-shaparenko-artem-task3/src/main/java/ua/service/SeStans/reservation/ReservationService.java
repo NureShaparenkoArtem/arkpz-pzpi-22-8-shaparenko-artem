@@ -131,7 +131,6 @@ public class ReservationService {
         System.out.println("[" + currentTime + "] Stations occupied: " + updatedReservations);
     }
 
-    // Цена обновляется после того, как механик предложил свои услуги
     public void updateReservationPrice(Integer reservationId, Float mechanicPrice) {
         Reservation existingReservation = reservationRepository.findById(reservationId).orElseThrow(() ->
                 new IllegalArgumentException("Reservation not found with ID:" + reservationId));
