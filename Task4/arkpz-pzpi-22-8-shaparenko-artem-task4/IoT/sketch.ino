@@ -1,11 +1,9 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-// WiFi настройки
 const char* ssid = "Wokwi-GUEST";
 const char* password = "";
 
-// MQTT настройки
 const char* mqtt_server = "broker.emqx.io";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "station/status";
